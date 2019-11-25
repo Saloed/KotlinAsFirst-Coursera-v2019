@@ -245,4 +245,91 @@ fun roman(n: Int): String = TODO()
  * Например, 375 = "триста семьдесят пять",
  * 23964 = "двадцать три тысячи девятьсот шестьдесят четыре"
  */
-fun russian(n: Int): String = TODO()
+
+val numberRussianNames = mapOf(
+    0 to "",
+    1 to "один",
+    2 to "два",
+    3 to "три",
+    4 to "четыре",
+    5 to "пять",
+    6 to "шесть",
+    7 to "семь",
+    8 to "восемь",
+    9 to "девять",
+    10 to "десять",
+    11 to "одиннадцать",
+    12 to "двенадцать",
+    13 to "тринадцать",
+    14 to "четырнадцать",
+    15 to "пятнадцать",
+    16 to "шестнадцать",
+    17 to "семнадцать",
+    18 to "восемнадцать",
+    19 to "девятнадцать"
+)
+
+val Int.russianName: String
+    get() = numberRussianNames[this] ?: ""
+
+
+fun hundreds(n: Int) = when {
+    n == 0 -> ""
+    n == 1 -> "сто "
+    n == 2 -> "двести "
+    n < 5 -> n.russianName + "ста "
+    else -> n.russianName + "сот "
+}
+
+
+fun thousandTens(n: Int) = formatTens(n) {
+    when {
+        it == 0 -> "тысяч "
+        it == 1 -> "одна тысяча "
+        it == 2 -> "две тысячи "
+        it < 5 -> it.russianName + " тысячи "
+        else -> it.russianName + " тысяч "
+    }
+}
+
+
+fun formatTens(n: Int, formatOnes: (Int) -> String): String {
+    if (n < 20) {
+        return formatOnes(n)
+    }
+    val tens = n / 10
+    val ones = n % 10
+    return when {
+        tens == 4 -> "сорок ${formatOnes(ones)}"
+        tens < 4 -> tens.russianName + "дцать " + formatOnes(ones)
+        tens < 9 -> tens.russianName + "десят " + formatOnes(ones)
+        else -> "девяносто ${formatOnes(ones)}"
+    }
+}
+
+fun thousandHundreds(n: Int): String {
+    if (n == 0) {
+        return ""
+    }
+
+    if (n < 100) {
+        return thousandTens(n)
+    }
+
+    val hundreds = n / 100
+    val tens = n % 100
+    return when {
+        hundreds == 0 -> thousandTens(tens)
+        hundreds == 1 -> "сто ${thousandTens(tens)}"
+        hundreds == 2 -> "двести ${thousandTens(tens)}"
+        hundreds < 5 -> hundreds.russianName + "ста " + thousandTens(tens)
+        else -> hundreds.russianName + "сот " + thousandTens(tens)
+    }
+}
+
+fun russian(n: Int): String {
+    val russianName = thousandHundreds(n / 1000) +
+            hundreds(n / 100 - n / 1000 * 10) +
+            formatTens(n % 100) { it.russianName }
+    return russianName.trim()
+}

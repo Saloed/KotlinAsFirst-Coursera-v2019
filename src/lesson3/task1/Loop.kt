@@ -2,6 +2,7 @@
 
 package lesson3.task1
 
+import lesson1.task1.sqr
 import kotlin.math.sqrt
 
 /**
@@ -67,7 +68,16 @@ fun digitCountInNumber(n: Int, m: Int): Int =
  *
  * Использовать операции со строками в этой задаче запрещается.
  */
-fun digitNumber(n: Int): Int = TODO()
+fun digitNumber(n: Int): Int {
+    if (n == 0) return 1
+    var digits = 0
+    var number = n
+    while (number != 0) {
+        digits++
+        number /= 10
+    }
+    return digits
+}
 
 /**
  * Простая
@@ -164,7 +174,17 @@ fun cos(x: Double, eps: Double): Double = TODO()
  *
  * Использовать операции со строками в этой задаче запрещается.
  */
-fun revert(n: Int): Int = TODO()
+fun revert(n: Int): Int {
+    var result = 0
+    var number = n
+    while (number != 0) {
+        val digit = number % 10
+        number /= 10
+        result *= 10
+        result += digit
+    }
+    return result
+}
 
 /**
  * Средняя
@@ -196,7 +216,7 @@ fun hasDifferentDigits(n: Int): Boolean = TODO()
  *
  * Использовать операции со строками в этой задаче запрещается.
  */
-fun squareSequenceDigit(n: Int): Int = TODO()
+fun squareSequenceDigit(n: Int) = digitOfSequence((1..Int.MAX_VALUE).asSequence().map(::sqr), n)
 
 /**
  * Сложная
@@ -207,4 +227,29 @@ fun squareSequenceDigit(n: Int): Int = TODO()
  *
  * Использовать операции со строками в этой задаче запрещается.
  */
-fun fibSequenceDigit(n: Int): Int = TODO()
+fun fibSequenceDigit(n: Int): Int = digitOfSequence(fibSequence(), n)
+
+fun fibSequence() = generateSequence(Pair(0, 1), { Pair(it.second, it.first + it.second) }).map { it.first }
+
+fun digitOfSequence(sequence: Sequence<Int>, n: Int): Int {
+    var remaining = n
+    for (number in sequence) {
+        val digits = digits(number)
+        remaining -= digits.size
+        if (remaining <= 0) {
+            return digits[0 - remaining]
+        }
+    }
+    throw IllegalStateException("Sequence is exhausted")
+}
+
+fun digits(n: Int): List<Int> {
+    val result = mutableListOf<Int>()
+    var number = n
+    while (number != 0) {
+        val digit = number % 10
+        number /= 10
+        result.add(digit)
+    }
+    return result.toList()
+}

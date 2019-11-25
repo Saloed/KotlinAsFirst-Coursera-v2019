@@ -2,6 +2,8 @@
 
 package lesson6.task1
 
+import java.util.*
+
 /**
  * Пример
  *
@@ -208,4 +210,116 @@ fun fromRoman(roman: String): Int = TODO()
  * IllegalArgumentException должен бросаться даже если ошибочная команда не была достигнута в ходе выполнения.
  *
  */
-fun computeDeviceCells(cells: Int, commands: String, limit: Int): List<Int> = TODO()
+fun computeDeviceCells(cells: Int, commands: String, limit: Int): List<Int> {
+    val initialCommand = parse(commands)
+    val evaluator = Evaluator(cells, limit)
+    evaluator.evaluate(initialCommand)
+    return evaluator.getState()
+}
+
+fun parse(commandStr: String): Command {
+    val forwardJumps: Deque<Command.JumpZero> = ArrayDeque()
+    val commands = commandStr.map { cmd ->
+        when (cmd) {
+            '+' -> Command.Increment()
+            '-' -> Command.Decrement()
+            '>' -> Command.IteratorRight()
+            '<' -> Command.IteratorLeft()
+            '[' -> {
+                val jump = Command.JumpZero()
+                forwardJumps.addFirst(jump)
+                jump
+            }
+            ']' -> {
+                val jump = Command.JumpNonZero()
+                val forwardJump = forwardJumps.pollFirst() ?: throw IllegalArgumentException("Unpaired jumps")
+                forwardJump.target = jump
+                jump.target = forwardJump
+                jump
+            }
+            ' ' -> Command.Noop()
+            else -> throw IllegalArgumentException("Unexpected symbol $cmd")
+        }
+    }
+    if (forwardJumps.isNotEmpty()) {
+        throw IllegalArgumentException("Unpaired jumps")
+    }
+    if (commands.isEmpty()) {
+        return Command.Stop
+    }
+    commands.zipWithNext().forEach { (current, next) -> current.next = next }
+    commands.last().next = Command.Stop
+    return commands.first()
+}
+
+class Evaluator(cellsCount: Int, private val executionLimit: Int) {
+    private val cells = IntArray(cellsCount) { 0 }
+    private var iterator = cellsCount / 2
+
+    fun evaluate(initialCommand: Command) {
+        var commandCount = 0
+        var command = initialCommand
+        while (commandCount < executionLimit) {
+            when (command) {
+                is Command.IteratorRight -> {
+                    iterator++
+                    if (iterator >= cells.size) {
+                        throw IllegalStateException("Out of bounds")
+                    }
+                }
+                is Command.IteratorLeft -> {
+                    iterator--
+                    if (iterator < 0) {
+                        throw IllegalStateException("Out of bounds")
+                    }
+                }
+                is Command.Increment -> {
+                    cells[iterator]++
+                }
+                is Command.Decrement -> {
+                    cells[iterator]--
+                }
+                is Command.JumpZero -> {
+                    if (cells[iterator] == 0) {
+                        command = command.target
+                    }
+                }
+                is Command.JumpNonZero -> {
+                    if (cells[iterator] != 0) {
+                        command = command.target
+                    }
+                }
+                is Command.Noop -> {
+                    // nothing
+                }
+                Command.Stop -> return
+            }
+            commandCount++
+            command = command.next
+        }
+    }
+
+    fun getState() = cells.toList()
+}
+
+sealed class Command {
+    lateinit var next: Command
+
+    class IteratorRight : Command()
+    class IteratorLeft : Command()
+    class Increment : Command()
+    class Decrement : Command()
+    class JumpZero : Command() {
+
+        lateinit var target: Command
+    }
+
+    class JumpNonZero : Command() {
+
+        lateinit var target: Command
+    }
+
+    class Noop : Command()
+
+    object Stop : Command()
+}

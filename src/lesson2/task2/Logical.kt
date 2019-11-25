@@ -3,6 +3,9 @@
 package lesson2.task2
 
 import lesson1.task1.sqr
+import kotlin.math.max
+import kotlin.math.min
+import kotlin.math.sign
 
 /**
  * Пример
@@ -48,7 +51,7 @@ fun daysInMonth(month: Int, year: Int): Int = TODO()
 fun circleInside(
     x1: Double, y1: Double, r1: Double,
     x2: Double, y2: Double, r2: Double
-): Boolean = TODO()
+): Boolean = sqr(x2 - x1) + sqr(y2 - y1) <= sign(r2 - r1) * sqr(r2 - r1)
 
 /**
  * Средняя
@@ -59,4 +62,5 @@ fun circleInside(
  * кирпич 4 х 4 х 4 пройдёт через отверстие 4 х 4.
  * Вернуть true, если кирпич пройдёт
  */
-fun brickPasses(a: Int, b: Int, c: Int, r: Int, s: Int): Boolean = TODO()
+fun brickPasses(a: Int, b: Int, c: Int, r: Int, s: Int): Boolean =
+    a <= r && min(b, c) <= s || b <= r && min(a, c) <= s || c <= r && min(a, b) <= s

@@ -2,6 +2,9 @@
 
 package lesson5.task1
 
+import java.util.concurrent.ConcurrentHashMap
+import kotlin.math.max
+
 /**
  * Пример
  *
@@ -280,4 +283,52 @@ fun findSumOfTwo(list: List<Int>, number: Int): Pair<Int, Int> = TODO()
  *     450
  *   ) -> emptySet()
  */
-fun bagPacking(treasures: Map<String, Pair<Int, Int>>, capacity: Int): Set<String> = TODO()
+fun bagPacking(treasures: Map<String, Pair<Int, Int>>, capacity: Int): Set<String> {
+    val items = treasures.map { (name, value) -> Item(name, value.first, value.second) }
+    val result = BagPacker(items).pack(capacity)
+    return result.map { it.name }.toSet()
+}
+
+data class Item(val name: String, val weight: Int, val cost: Int)
+
+class BagPacker(private val items: List<Item>) {
+    private val bestValueCache = ConcurrentHashMap<Pair<Int, Int>, Int>()
+    private fun bestValue(nItems: Int, weightLimit: Int): Int {
+        val currentValue = bestValueCache[nItems to weightLimit]
+        if (currentValue != null) {
+            return currentValue
+        }
+        val result = computeValue(nItems, weightLimit)
+        bestValueCache[nItems to weightLimit] = result
+        return result
+    }
+
+    private fun computeValue(nItems: Int, weightLimit: Int): Int {
+        if (nItems == 0) {
+            return 0
+        }
+        val item = items[nItems - 1]
+        if (item.weight > weightLimit) {
+            return bestValue(nItems - 1, weightLimit)
+        }
+        val costWithoutItem = bestValue(nItems - 1, weightLimit)
+        val costWithItem = bestValue(nItems - 1, weightLimit - item.weight) + item.cost
+        return max(costWithItem, costWithoutItem)
+    }
+
+    fun pack(capacity: Int): List<Item> {
+        val result = mutableListOf<Item>()
+        var weightLimit = capacity
+        for (i in items.indices.reversed()) {
+            val withItem = bestValue(i + 1, weightLimit)
+            val withoutItem = bestValue(i, weightLimit)
+            if (withItem > withoutItem) {
+                result.add(items[i])
+                weightLimit -= items[i].weight
+            }
+        }
+        return result
+    }
+}
+
+

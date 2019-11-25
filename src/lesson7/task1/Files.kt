@@ -3,6 +3,8 @@
 package lesson7.task1
 
 import java.io.File
+import java.io.PrintWriter
+import kotlin.math.max
 
 /**
  * Пример
@@ -398,13 +400,49 @@ fun markdownToHtml(inputName: String, outputName: String) {
     0
 +235
 -----
- 2350
+2350
  *
  */
 fun printMultiplicationProcess(lhv: Int, rhv: Int, outputName: String) {
-    TODO()
+    fun PrintWriter.printAlign(number: Int, to: Int, shift: Int = 0, prefix: String = "") {
+        println(prefix + " ".repeat(to - number.length - prefix.length - shift) + "$number")
+    }
+
+    fun PrintWriter.printDashes(size: Int) {
+        println("-".repeat(size))
+    }
+
+    File(outputName).printWriter().use {
+        val res = lhv * rhv
+        val resultLength = res.length + 1
+        var r = rhv
+        var nextNum = lhv * (r % 10)
+
+        it.printAlign(lhv, resultLength)
+        it.printAlign(rhv, resultLength, prefix = "*")
+        it.printDashes(resultLength)
+        it.printAlign(nextNum, resultLength)
+
+        var operationCount = 1
+        while (r / 10 != 0) {
+            r /= 10
+            nextNum = lhv * (r % 10)
+            it.printAlign(nextNum, resultLength, shift = operationCount, prefix = "+")
+            operationCount += 1
+        }
+
+        it.printDashes(resultLength)
+        it.println(" $res")
+    }
 }
 
+val Int.length
+    get() = "$this".length
+
+val Int.digits
+    get() = "$this".map(Character::getNumericValue)
+
+fun Boolean.toInt() = if (this) 1 else 0
 
 /**
  * Сложная
@@ -426,7 +464,74 @@ fun printMultiplicationProcess(lhv: Int, rhv: Int, outputName: String) {
  * Используемые пробелы, отступы и дефисы должны в точности соответствовать примеру.
  *
  */
-fun printDivisionProcess(lhv: Int, rhv: Int, outputName: String) {
-    TODO()
-}
 
+
+fun printDivisionProcess(lhv: Int, rhv: Int, outputName: String) {
+    fun PrintWriter.handleZero() {
+        val len = if (lhv.length == 1) 1 else 0
+        println(" ".repeat(len) + "$lhv | $rhv")
+        println(" ".repeat(if (lhv.length - 2 >= 0) (lhv.length - 2) else 0) + "-0" + " ".repeat(3) + "0")
+        println("-".repeat(max(2, lhv.length)))
+        println(" ".repeat(len) + "$lhv")
+    }
+
+    fun PrintWriter.printSection(len: Int, leadingZeroes: Boolean, upper: Int, under: Int) {
+        val upperLine = " ".repeat(len) + (if (leadingZeroes) "0" else "") + "$upper"
+        val underStr = "-$under"
+        val underLine = " ".repeat(upperLine.length - underStr.length) + underStr
+        val dashes = "-".repeat(max(under.length + 1, upper.length))
+        val endLine = " ".repeat(upperLine.length - dashes.length) + dashes
+        println(upperLine)
+        println(underLine)
+        println(endLine)
+    }
+
+    fun PrintWriter.printHeader(res: Int, under: Int, upper: Int) {
+        val delimiter = " | "
+        if (under.length == upper.length) {
+            print(" ")
+        }
+        println("$lhv$delimiter$rhv")
+        println("-$under" + " ".repeat(lhv.length + delimiter.length - under.length) + "$res")
+        println("-".repeat(max(under.length + 1, upper.length)))
+    }
+
+    File(outputName).printWriter().use {
+        val res = lhv / rhv
+        if (res == 0) {
+            it.handleZero()
+            return
+        }
+
+        val lhvDigitsIterator = lhv.digits.iterator()
+
+        var upper = lhvDigitsIterator.next()
+        while (upper / rhv == 0) {
+            upper = upper * 10 + lhvDigitsIterator.next()
+        }
+        var under = upper / rhv * rhv
+
+        it.printHeader(res, under, upper)
+
+        var len = if (under.length == upper.length) 1 else 0
+        len += upper.length - (upper - under).length
+        upper -= under
+        var hasLeadingZeroes: Boolean = upper == 0
+
+        for (num in lhvDigitsIterator) {
+            upper = upper * 10 + num
+            under = upper / rhv * rhv
+
+            it.printSection(len, hasLeadingZeroes, upper, under)
+
+            len += upper.length - (upper - under).length
+            if (hasLeadingZeroes) {
+                len += 1
+            }
+            upper -= under
+            hasLeadingZeroes = upper == 0
+        }
+
+        it.println(" ".repeat(len) + "$upper")
+    }
+}
